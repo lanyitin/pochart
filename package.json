@@ -1,0 +1,13 @@
+{
+  "name": "hcwrap",
+  "version": "1.0.0",
+  "description": "Highcharts Wrapper",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Highcharts"
+  ],
+  "author": "Lan, Yi-Tin",
+  "license": "ISC"
+}
