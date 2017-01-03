@@ -3,12 +3,14 @@
 <html>
     <head>
         <title>pochart test page</title>
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highcharts/5.0.6/css/highcharts.css" />
+        <link rel="stylesheet" href="http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css"/>
     </head>
     <body>
         <div id="chart"></div>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/5.0.6/highcharts.js"></script>
+        <div id="chart2"></div>
+        <script type="text/javascript" src="http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js"></script>
         <script src="dist/module.js"></script>
+        <script src="dist/non_strict.js"></script>
         <script type="text/javascript">
         var randomIntFromInterval = function (min,max)
         {
@@ -48,15 +50,33 @@
             data.ratio = (data.lot_count / data.expected_count * 100).toFixed(0) / 1
         }
 
-        window.chart = Pochart.attachChart("chart", oee_data, {ratio: {type: "column", yAxis: {opposite: true, title:{text: "ratio"}}}}, ["ratio", "lot_count", "expected_count"]);
+        window.chart = Pochart.attachChart("chart", oee_data, ["lot_count", "ratio", "expected_count"], {
+            expected_count: {type: "column"},
+            lot_count: {type: "column"},
+        });
         chart.setTitle("OEE");
-        // chart.setXAxis((function () {
-        //     let xAxis = [];
-        //     oee_data.forEach(function (data) {
-        //         xAxis.push(data.date);
-        //     });
-        //     return xAxis;
-        // })());
+        chart.setXAxis((function () {
+            let xAxis = [];
+            oee_data.forEach(function (data) {
+                xAxis.push(data.date);
+            });
+            return xAxis;
+        })());
+        chart.setYAxisTitle("ratio", "百分比%");
+        chart.setYAxisTitle("lot_count", "數量");
+        chart.setLegendTitle("ratio", "OEE");
+        chart.setLegendTitle("lot_count", "實際產出");
+        chart.setLegendTitle("expected_count", "預期產出");
+        chart.setYAxisMinValue("ratio", 0);
+
+        window.chart2 = Pochart.attachChart("chart2", oee_data, undefined, {lot_count: {type: "pie"}});
+        chart2.setXAxis((function () {
+            let xAxis = [];
+            oee_data.forEach(function (data) {
+                xAxis.push(data.date);
+            });
+            return xAxis;
+        })());
         </script>
     </body>
 </html>
