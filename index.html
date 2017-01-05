@@ -3,14 +3,11 @@
 <html>
     <head>
         <title>pochart test page</title>
-        <link rel="stylesheet" href="http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css"/>
     </head>
     <body>
         <div id="chart"></div>
         <div id="chart2"></div>
-        <script type="text/javascript" src="http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js"></script>
         <script src="dist/module.js"></script>
-        <script src="dist/non_strict.js"></script>
         <script type="text/javascript">
         var randomIntFromInterval = function (min,max)
         {
@@ -49,8 +46,9 @@
             let data = oee_data[i];
             data.ratio = (data.lot_count / data.expected_count * 100).toFixed(0) / 1
         }
+        PochartProxy.initialize();
 
-        window.chart = Pochart.attachChart("chart", oee_data, ["lot_count", "ratio", "expected_count"], {
+        window.chart = PochartProxy.attachChart("chart", oee_data, ["lot_count", "ratio", "expected_count"], {
             expected_count: {type: "column"},
             lot_count: {type: "column"},
         });
@@ -62,14 +60,18 @@
             });
             return xAxis;
         })());
-        chart.setYAxisTitle("ratio", "百分比%");
-        chart.setYAxisTitle("lot_count", "數量");
+        chart.setYAxisLabel("ratio", "百分比%");
+        chart.setYAxisLabel("lot_count", "數量");
         chart.setLegendTitle("ratio", "OEE");
         chart.setLegendTitle("lot_count", "實際產出");
         chart.setLegendTitle("expected_count", "預期產出");
         chart.setYAxisMinValue("ratio", 0);
 
-        window.chart2 = Pochart.attachChart("chart2", oee_data, undefined, {lot_count: {type: "pie"}});
+        window.chart2 = PochartProxy.attachChart("chart2", oee_data, ["expected_count", "lot_count", "ratio"], {
+            lot_count: {type: "pie"},
+            ratio: {type: "spline", yAxis: {id: "for_line"}},
+            expected_count: {yAxis: {id: "for_line"}}
+        });
         chart2.setXAxis((function () {
             let xAxis = [];
             oee_data.forEach(function (data) {
