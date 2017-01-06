@@ -286,6 +286,7 @@ Pochart.PochartController = function (chart, config) {
     }
 }
 
+
 let PochartProxy = {};
 PochartProxy.initialized = false;
 PochartProxy.action_queue = [];
@@ -377,39 +378,3 @@ PochartProxy.attachChart = function () {
     });
     return proxy;
 };
-
-class Proxy {
-    constructor(proxiedObj) {
-        this.proxiedObj = proxiedObj;
-        this.wrapFunc = arguments[1];
-
-        let properties = Object.getOwnPropertyNames(proxiedObj).filter((p) => {
-            return typeof proxiedObj[p] === "function";
-        });
-        properties.forEach((p) => {
-            this[p] = this.makeWrappedFunction(this.wrapFunc, proxiedObj[p]);
-        });
-    }
-
-    makeWrappedFunction (wrapFunc, beWrapFunc) {
-        if (wrapFunc) {
-            return function () {
-                wrapFunc(this.proxiedObj, arguments, beWrapFunc);
-            }
-        } else {
-            return function () {
-                beWrapFunc.apply(this.proxiedObj, arguments);
-            }
-        }
-    }
-}
-
-class ScopedProxy extends Proxy {
-    constructor(scope, template, wrapFunc) {
-        super(template, function () {
-            if (scope.obj != null) {
-                wrapFunc.apply(arguments);
-            }
-        });
-    }
-}
