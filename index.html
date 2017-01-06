@@ -47,7 +47,7 @@
             data.ratio = (data.lot_count / data.expected_count * 100).toFixed(0) / 1
         }
 
-        window.chart = PochartProxy.attachChart("chart", oee_data, ["lot_count", "ratio", "expected_count"], {
+        window.chart = Pochart.attachChart("chart", oee_data, ["lot_count", "ratio", "expected_count"], {
             expected_count: {type: "column"},
             lot_count: {type: "column"},
         });
@@ -66,7 +66,7 @@
         chart.setLegendTitle("expected_count", "預期產出");
         chart.setYAxisMinValue("ratio", 0);
 
-        window.chart2 = PochartProxy.attachChart("chart2", oee_data, ["expected_count", "lot_count", "ratio"], {
+        window.chart2 = Pochart.attachChart("chart2", oee_data, ["expected_count", "lot_count", "ratio"], {
             lot_count: {type: "pie"},
             ratio: {type: "spline", yAxis: {id: "for_line"}},
             expected_count: {yAxis: {id: "for_line"}}

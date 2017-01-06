@@ -89,8 +89,7 @@ Array.prototype.some = Array.prototype.some || function(evaluator, thisArg) {
     return false;
 }
 
-/** @namespace */
-let Pochart = {
+let _Pochart = {
     priority: ["area", "column", "bar", "pie", "line", "spline", "scatter"]
 }
 /**
@@ -98,7 +97,7 @@ let Pochart = {
  * @param {string} domElement - 目標的DOM或是該DOM的id
  * @param {json} dataTable - 從DataTable序列化出來的json資料
  */
-Pochart.attachChart = function (domElement, dataTable) {
+_Pochart.attachChart = function (domElement, dataTable) {
     if (typeof(domElement) === "string") {
         domElement = document.getElementById(domElement);
     }
@@ -168,7 +167,7 @@ Pochart.attachChart = function (domElement, dataTable) {
     }
     let chart = Highcharts.chart(domElement, chart_config);
 
-    return new this.PochartController(chart, chart_config)
+    return new PochartController(chart, chart_config)
 }
 
 /**
@@ -177,7 +176,7 @@ Pochart.attachChart = function (domElement, dataTable) {
  * @param {highchart} chart - Highchart物件
  * @param {object} config - 設定
  */
-Pochart.PochartController = function (chart, config) {
+let PochartController = function (chart, config) {
     this.nameMap = {};
     let keys = config.series.map((ser) => {return ser.name;});
     /**
@@ -286,11 +285,17 @@ Pochart.PochartController = function (chart, config) {
     }
 }
 
+/** @namespace */
+let Pochart = {};
+Pochart.initialized = false;
+Pochart.action_queue = [];
 
-let PochartProxy = {};
-PochartProxy.initialized = false;
-PochartProxy.action_queue = [];
-PochartProxy.load = function (url, callback) {
+/**
+ * dynamicly load external resources
+ * @param {string} url - the url of resource
+ * @param {function} callback - callback function invoked after resource loaded
+ */
+Pochart.load = function (url, callback) {
     var res = null;
     if (url.endsWith("css")) {
         res = document.createElement('link');
@@ -323,7 +328,12 @@ PochartProxy.load = function (url, callback) {
         document.getElementsByTagName("body")[0].appendChild(res);
     }
 }
-PochartProxy.initialize = function () {
+
+/**
+ * detect whether Highcharts has been loaed
+ * if not, pause all (attachChart) actions unitl Highcharts be loaded
+ */
+Pochart.initialize = function () {
     if (!this.IsHcLoaded()) {
         this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css', () => {
             this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js');
@@ -342,20 +352,23 @@ PochartProxy.initialize = function () {
     this.initialized = true;
 }
 
-PochartProxy.IsHcLoaded = function () {
+Pochart.IsHcLoaded = function () {
     return typeof Highcharts !== "undefined" && typeof Highcharts !== "null"
 }
 
-PochartProxy.attachChart = function () {
+/**
+ * craete a PochartContollerPorxy that will delay all actions until Highcharts loaded
+ */
+Pochart.attachChart = function () {
     if (!this.initialized) {
         this.initialize();
     }
     let proxiedObject = null;
     this.action_queue.push(() => {
-        proxiedObject = Pochart.attachChart.apply(Pochart, arguments);
+        proxiedObject = _Pochart.attachChart.apply(_Pochart, arguments);
     });
-    let NullChartObj = new Pochart.PochartController({}, {series:[]});
-    let properties = Object.getOwnPropertyNames(new Pochart.PochartController({}, {series:[]})).filter((p) => {
+    let NullChartObj = new PochartController({}, {series:[]});
+    let properties = Object.getOwnPropertyNames(new PochartController({}, {series:[]})).filter((p) => {
         return typeof NullChartObj[p] === "function";
     });
     let proxy = {};

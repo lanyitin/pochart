@@ -1,1 +1,2 @@
-babel src --out-dir dist -w
+babel src --out-dir dist
+jsdoc dist/module.js
