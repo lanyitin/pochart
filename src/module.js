@@ -91,12 +91,10 @@ Array.prototype.some = Array.prototype.some || function(evaluator, thisArg) {
 
 /** @namespace */
 let Pochart = {
-    initialized: false,
-    autoLoadDeps: false,
     priority: ["area", "column", "bar", "pie", "line", "spline", "scatter"]
 }
 /**
- * attach a chart to existed dom 
+ * attach a chart to existed dom
  * @param {string} domElement - 目標的DOM或是該DOM的id
  * @param {json} dataTable - 從DataTable序列化出來的json資料
  */
@@ -170,16 +168,16 @@ Pochart.attachChart = function (domElement, dataTable) {
     }
     let chart = Highcharts.chart(domElement, chart_config);
 
-    return new this.PochartInstance(chart, chart_config)
+    return new this.PochartController(chart, chart_config)
 }
 
-/** 
- * PochartInstance
+/**
+ * PochartController
  * @constructor
  * @param {highchart} chart - Highchart物件
  * @param {object} config - 設定
  */
-Pochart.PochartInstance = function (chart, config) {
+Pochart.PochartController = function (chart, config) {
     this.nameMap = {};
     let keys = config.series.map((ser) => {return ser.name;});
     /**
@@ -257,7 +255,6 @@ Pochart.PochartInstance = function (chart, config) {
     this.setYAxisMaxValue = function (key, value) {
         this.updateAxisConfig(key, "max", value);
     };
-        
     this.setLegendTitle = function (key, title) {
         let idx = keys.indexOf(key);
         let target = chart.legend.allItems[idx];
@@ -312,57 +309,64 @@ PochartProxy.load = function (url, callback) {
         };
     } else {
         res.onload = function () {
-            callback();
+            if (callback) {
+                callback();
+            }
         };
     }
     if (url.endsWith("css")) {
         res.href = url;
+        document.getElementsByTagName("head")[0].appendChild(res);
     } else {
         res.src = url;
+        document.getElementsByTagName("body")[0].appendChild(res);
     }
-    document.getElementsByTagName("head")[0].appendChild(res);
 }
 PochartProxy.initialize = function () {
-    this.hcloaded = false;
-    if (typeof Highcharts === "undefined") {
-        this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js', () => {
-            this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css', () => {
-                this.hcloaded = true;
-            });
+    if (!this.IsHcLoaded()) {
+        this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css', () => {
+            this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js');
         });
-    } else {
-        this.hcloaded = true;
     }
 
-
     setInterval(() => {
-        if (this.action_queue.length === 0 || !this.hcloaded) {
+        if (this.action_queue.length === 0 || !this.IsHcLoaded()) {
             return;
         }
         let action = this.action_queue.pop();
-        if (action !== undefined && this.hcloaded) {
+        if (action) {
             action();
         }
     }, 50);
+    this.initialized = true;
+}
+
+PochartProxy.IsHcLoaded = function () {
+    return typeof Highcharts !== "undefined" && typeof Highcharts !== "null"
 }
 
 PochartProxy.attachChart = function () {
+    if (!this.initialized) {
+        this.initialize();
+    }
     let proxiedObject = null;
     this.action_queue.push(() => {
         proxiedObject = Pochart.attachChart.apply(Pochart, arguments);
     });
-    let NullChartObj = new Pochart.PochartInstance({}, {series:[]});
-    let properties = Object.getOwnPropertyNames(new Pochart.PochartInstance({}, {series:[]})).filter((p) => {
+    let NullChartObj = new Pochart.PochartController({}, {series:[]});
+    let properties = Object.getOwnPropertyNames(new Pochart.PochartController({}, {series:[]})).filter((p) => {
         return typeof NullChartObj[p] === "function";
     });
     let proxy = {};
     proxy.action_queue = [];
     setInterval(() => {
-        if (proxy.action_queue.length == 0 || !this.hcloaded || proxiedObject == null) {
+        if (proxy.action_queue.length == 0 || proxiedObject == null) {
             return;
         }
         let action = proxy.action_queue.pop();
-        action();
+        if (action) {
+            action();
+        }
     }, 50);
     properties.forEach((p) => {
         proxy[p] = function () {
@@ -372,4 +376,40 @@ PochartProxy.attachChart = function () {
         }
     });
     return proxy;
+};
+
+class Proxy {
+    constructor(proxiedObj) {
+        this.proxiedObj = proxiedObj;
+        this.wrapFunc = arguments[1];
+
+        let properties = Object.getOwnPropertyNames(proxiedObj).filter((p) => {
+            return typeof proxiedObj[p] === "function";
+        });
+        properties.forEach((p) => {
+            this[p] = this.makeWrappedFunction(this.wrapFunc, proxiedObj[p]);
+        });
+    }
+
+    makeWrappedFunction (wrapFunc, beWrapFunc) {
+        if (wrapFunc) {
+            return function () {
+                wrapFunc(this.proxiedObj, arguments, beWrapFunc);
+            }
+        } else {
+            return function () {
+                beWrapFunc.apply(this.proxiedObj, arguments);
+            }
+        }
+    }
+}
+
+class ScopedProxy extends Proxy {
+    constructor(scope, template, wrapFunc) {
+        super(template, function () {
+            if (scope.obj != null) {
+                wrapFunc.apply(arguments);
+            }
+        });
+    }
 }

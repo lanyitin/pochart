@@ -46,7 +46,6 @@
             let data = oee_data[i];
             data.ratio = (data.lot_count / data.expected_count * 100).toFixed(0) / 1
         }
-        PochartProxy.initialize();
 
         window.chart = PochartProxy.attachChart("chart", oee_data, ["lot_count", "ratio", "expected_count"], {
             expected_count: {type: "column"},
