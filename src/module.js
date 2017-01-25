@@ -186,6 +186,11 @@ let PochartController = function (chart, config) {
     this.GetHighchart = function () {
         return chart;
     };
+
+    /**
+     * 設定X軸的刻度內容
+     * @param {array} kyes
+     */
     this.setXAxis = function () {
         chart.xAxis[0].setCategories(arguments[0]);
     };
@@ -193,7 +198,7 @@ let PochartController = function (chart, config) {
     /**
      * 依據DataTable的欄位名稱來找出相對應的y軸
      * @param {string} key - DataTable的欄位名稱
-     * @return {object}
+     * @return {Axis}
      */
     this.findYAxis = function (key) {
         let result = chart.yAxis.find((axis) => {
@@ -207,6 +212,12 @@ let PochartController = function (chart, config) {
         return result;
     };
 
+    /**
+     * 設定y軸的屬性
+     * @param {string} key - 在DataTable中的資料欄位key直
+     * @param {string} property_name - 屬性名稱
+     * @param {string} value
+     */
     this.updateAxisConfig = function (key, property_name, value) {
         let targetAxis = this.findYAxis(key);
         if (targetAxis) {
@@ -247,13 +258,21 @@ let PochartController = function (chart, config) {
         this.updateAxisConfig(key, "min", value);
     };
 
-    /** * 設定Y軸的最大值
+    /** 
+    * 設定Y軸的最大值
     * @param {string} key - DataTable的欄位名稱
     * @param {number} value - 最大值
     */
     this.setYAxisMaxValue = function (key, value) {
         this.updateAxisConfig(key, "max", value);
     };
+
+
+    /**
+     * 設定資料欄位在圖表中的標題A
+     * @param {string} key -  DataTable中資料欄位的key
+     * @param {string} title - 在圖表中的標題
+     */
     this.setLegendTitle = function (key, title) {
         let idx = keys.indexOf(key);
         let target = chart.legend.allItems[idx];
@@ -263,12 +282,18 @@ let PochartController = function (chart, config) {
         }
     };
 
-    // 設定圖表標題
+    /**
+     * 設定圖表標題
+     * @param {string} title
+     */
     this.setTitle = function () {
         chart.setTitle({text: arguments[0]});
     };
 
-    // @param {boolean} flag - 是否讓column chart進行堆疊
+    /**
+     * 設定長條圖是否堆疊
+     * @param {boolean} flag - 是否讓column chart進行堆疊
+     */
     this.toggleStackedColumn = function (flag = false) {
         if (flag) {
             flag = "normal";
@@ -358,6 +383,11 @@ Pochart.IsHcLoaded = function () {
 
 /**
  * craete a PochartContollerPorxy that will delay all actions until Highcharts loaded
+ * @param {string} domElement - 目標的DOM或是該DOM的id
+ * @param {json} dataTable - 從DataTable序列化出來的json資料
+ * @param {array} [[]] ordering - 各個欄位繪圖的順序，由底下往上排序
+ * @param {json} [{}] configs - 各個欄位繪圖的設定
+ * @return {PochartController}
  */
 Pochart.attachChart = function () {
     if (!this.initialized) {
@@ -391,3 +421,17 @@ Pochart.attachChart = function () {
     });
     return proxy;
 };
+
+/** @constructor
+ * @param {string} id
+ */
+let Axis = function (id) {
+    /**
+     *  unique id for each Axis
+     */
+    this.id = id;
+    /**
+     *  若opposite為ture，那此Y軸則會放在表的右手邊
+     */
+    this.opposite = false;
+}
