@@ -127,6 +127,19 @@ _Pochart.attachChart = function (domElement, dataTable) {
             data: data,
             name: config.name || key
         };
+
+        if (typeof config.events === "object") {
+            //ser.events = config.events
+            ser.events = {}
+            for (var property in config.events) {
+                if (config.events.hasOwnProperty(property)) {
+                    ser.events[property] = (function (event) {
+                        config.events[property].bind(event.point)(event.point.y, event.point.category, event.point.x);
+                    });
+                }
+            }
+        }
+
         if (typeof config.yAxis == "object") {
             config.yAxis.id = config.yAxis.id || key;
             ser.yAxis = config.yAxis.id;
@@ -165,6 +178,7 @@ _Pochart.attachChart = function (domElement, dataTable) {
     if (yAxis.length > 0) {
         chart_config.yAxis = yAxis;
     }
+
     let chart = Highcharts.chart(domElement, chart_config);
 
     return new PochartController(chart, chart_config)
@@ -258,7 +272,7 @@ let PochartController = function (chart, config) {
         this.updateAxisConfig(key, "min", value);
     };
 
-    /** 
+    /**
     * 設定Y軸的最大值
     * @param {string} key - DataTable的欄位名稱
     * @param {number} value - 最大值

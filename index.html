@@ -7,7 +7,7 @@
     <body>
         <div id="chart"></div>
         <div id="chart2"></div>
-        <script src="dist/module.js"></script>
+        <script src="dist/pochart.js"></script>
         <script type="text/javascript">
         var randomIntFromInterval = function (min,max)
         {
@@ -48,7 +48,7 @@
         }
 
         window.chart = Pochart.attachChart("chart", oee_data, ["lot_count", "ratio", "expected_count"], {
-            expected_count: {type: "column"},
+            expected_count: {type: "column", events: {click: function () {console.log(this, arguments)}}},
             lot_count: {type: "column"},
         });
         chart.setTitle("OEE");

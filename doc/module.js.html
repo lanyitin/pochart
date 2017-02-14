@@ -26,11 +26,8 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>"use strict";
-
-var _typeof = typeof Symbol === "function" &amp;&amp; typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj &amp;&amp; typeof Symbol === "function" &amp;&amp; obj.constructor === Symbol &amp;&amp; obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
-String.prototype.endsWith = String.prototype.endsWith || function (searchString, position) {
+            <pre class="prettyprint source linenums"><code>﻿"use strict";
+String.prototype.endsWith = String.prototype.endsWith || function(searchString, position) {
     var subjectString = this.toString();
     if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
         position = subjectString.length;
@@ -40,9 +37,8 @@ String.prototype.endsWith = String.prototype.endsWith || function (searchString,
     return lastIndex !== -1 &amp;&amp; lastIndex === position;
 };
 
-Array.prototype.find = Array.prototype.find || function (predicate) {
+Array.prototype.find = Array.prototype.find || function(predicate) {
     'use strict';
-
     if (this == null) {
         throw new TypeError('Array.prototype.find called on null or undefined');
     }
@@ -59,9 +55,9 @@ Array.prototype.find = Array.prototype.find || function (predicate) {
         }
     }
     return undefined;
-};
+}
 
-Array.prototype.map = Array.prototype.map || function (callback, thisArg) {
+Array.prototype.map = Array.prototype.map || function(callback, thisArg) {
     var T, A, k;
     if (this == null) {
         throw new TypeError(' this is null or not defined');
@@ -86,18 +82,17 @@ Array.prototype.map = Array.prototype.map || function (callback, thisArg) {
         k++;
     }
     return A;
-};
+}
 
-Array.prototype.some = Array.prototype.some || function (evaluator, thisArg) {
+Array.prototype.some = Array.prototype.some || function(evaluator, thisArg) {
     'use strict';
-
     if (!this) {
         throw new TypeError('Array.prototype.some called on null or undefined');
     }
 
-    if (typeof evaluator !== 'function') {
-        if (typeof evaluator === 'string') {
-            if (!(evaluator = eval(evaluator))) {
+    if (typeof(evaluator) !== 'function') {
+        if (typeof(evaluator) === 'string') {
+            if ( ! (evaluator = eval(evaluator)) ){
                 throw new TypeError();
             }
         } else {
@@ -106,7 +101,7 @@ Array.prototype.some = Array.prototype.some || function (evaluator, thisArg) {
     }
 
     var i;
-    if (thisArg === undefined) {
+    if (thisArg===undefined){
         for (i in this) {
             if (evaluator(this[i], i, this)) {
                 return true;
@@ -120,73 +115,80 @@ Array.prototype.some = Array.prototype.some || function (evaluator, thisArg) {
         }
     }
     return false;
-};
+}
 
-var _Pochart = {
+let _Pochart = {
     priority: ["area", "column", "bar", "pie", "line", "spline", "scatter"]
-};
+}
 /**
  * attach a chart to existed dom
  * @param {string} domElement - 目標的DOM或是該DOM的id
  * @param {json} dataTable - 從DataTable序列化出來的json資料
  */
 _Pochart.attachChart = function (domElement, dataTable) {
-    var _this = this;
-
-    if (typeof domElement === "string") {
+    if (typeof(domElement) === "string") {
         domElement = document.getElementById(domElement);
     }
     if (typeof domElement.nodeName === "undefined") {
         console.error(domElement, "is not a dom element");
         return;
     }
-    var keys = arguments[2];
+    let keys = arguments[2];
     if (keys === undefined) {
         keys = Object.keys(dataTable[0]);
     }
     if (!Array.isArray(keys)) {
-        console.error('keys should be a array, but we got ' + JSON.stringify(keys));
+        console.error(`keys should be a array, but we got ${JSON.stringify(keys)}`);
         keys = Object.keys(dataTable[0]);
     }
-    var configs = arguments[3] || {};
-    var series = [];
+    let configs = arguments[3] || {};
+    let series = [];
 
     keys.forEach(function (key) {
-        var data = [];
-        var config = configs[key] || {};
-        for (var j = 0; j &lt; dataTable.length; j++) {
+        let data = [];
+        let config = configs[key] || {};
+        for (let j = 0; j &lt; dataTable.length; j++) {
             data.push(dataTable[j][key]);
         }
-        var ser = {
+        let ser = {
             type: config.type || "line",
             data: data,
             name: config.name || key
         };
-        if (_typeof(config.yAxis) == "object") {
+
+        if (typeof config.events === "object") {
+            //ser.events = config.events
+            ser.events = {}
+            for (var property in config.events) {
+                if (config.events.hasOwnProperty(property)) {
+                    ser.events[property] = (function (event) {
+                        config.events[property].bind(event.point)(event.point.y, event.point.category, event.point.x);
+                    });
+                }
+            }
+        }
+
+        if (typeof config.yAxis == "object") {
             config.yAxis.id = config.yAxis.id || key;
             ser.yAxis = config.yAxis.id;
         } else {
-            ser.yAxis = '_pochart_default_yaxis_' + ser.type;
+            ser.yAxis = `_pochart_default_yaxis_${ser.type}`;
         }
         series.push(ser);
     });
 
-    var yAxis = [];
-    for (var key in configs) {
-        var config = configs[key];
-        var exists_axises = yAxis.map(function (axis) {
-            return axis.id;
-        });
-        if (_typeof(config.yAxis) == "object" &amp;&amp; exists_axises.indexOf(config.yAxis.id) &lt; 0) {
+    let yAxis = [];
+    for (let key in configs) {
+        let config = configs[key];
+        let exists_axises = yAxis.map((axis) => {return axis.id;});
+        if (typeof config.yAxis == "object" &amp;&amp; exists_axises.indexOf(config.yAxis.id) &lt; 0) {
             yAxis.push(config.yAxis);
         }
     }
     series.forEach(function (ser) {
-        var axisName = yAxis.map(function (axis) {
-            return axis.id;
-        });
+        let axisName = yAxis.map(function (axis) {return axis.id;});
         if (ser.yAxis.indexOf("_pochart_default_yaxis") === 0 &amp;&amp; axisName.indexOf(ser.yAxis) &lt; 0) {
-            var newAxis = { id: ser.yAxis };
+            let newAxis = {id: ser.yAxis};
             if (ser.type.indexOf("line") > -1) {
                 newAxis.opposite = true;
             }
@@ -194,22 +196,21 @@ _Pochart.attachChart = function (domElement, dataTable) {
         }
     });
 
-    series = series.sort(function (ser, ser2) {
-        return _this.priority.indexOf(ser.type) - _this.priority.indexOf(ser2.type);
+    series = series.sort((ser, ser2) => {
+        return this.priority.indexOf(ser.type) - this.priority.indexOf(ser2.type);
     });
-    keys = series.map(function (ser) {
-        return ser.name;
-    });
-    var chart_config = {
+    keys = series.map((ser) => {return ser.name});
+    let chart_config = {
         series: series
-    };
+    }
     if (yAxis.length > 0) {
         chart_config.yAxis = yAxis;
     }
-    var chart = Highcharts.chart(domElement, chart_config);
 
-    return new PochartController(chart, chart_config);
-};
+    let chart = Highcharts.chart(domElement, chart_config);
+
+    return new PochartController(chart, chart_config)
+}
 
 /**
  * PochartController
@@ -217,11 +218,9 @@ _Pochart.attachChart = function (domElement, dataTable) {
  * @param {highchart} chart - Highchart物件
  * @param {object} config - 設定
  */
-var PochartController = function PochartController(chart, config) {
+let PochartController = function (chart, config) {
     this.nameMap = {};
-    var keys = config.series.map(function (ser) {
-        return ser.name;
-    });
+    let keys = config.series.map((ser) => {return ser.name;});
     /**
      * 取得Highchart物件
      * @return {object}
@@ -244,15 +243,13 @@ var PochartController = function PochartController(chart, config) {
      * @return {Axis}
      */
     this.findYAxis = function (key) {
-        var _this2 = this;
-
-        var result = chart.yAxis.find(function (axis) {
-            return axis.series.some(function (ser) {
-                return ser.name === key || ser.name === _this2.nameMap[key];
+        let result = chart.yAxis.find((axis) => {
+            return axis.series.some((ser) => {
+                return ser.name === key || ser.name === this.nameMap[key];
             });
         });
         if (!result) {
-            console.error('can\'t find yAxis for "' + key + '", please make sure that input data has that colum"');
+            console.error(`can't find yAxis for "${key}", please make sure that input data has that colum"`);
         }
         return result;
     };
@@ -264,27 +261,26 @@ var PochartController = function PochartController(chart, config) {
      * @param {string} value
      */
     this.updateAxisConfig = function (key, property_name, value) {
-        var targetAxis = this.findYAxis(key);
+        let targetAxis = this.findYAxis(key);
         if (targetAxis) {
-            var _config = {};
-            _config[property_name] = value;
-            targetAxis.update(_config);
+            let config = {};
+            config[property_name] = value;
+            targetAxis.update(config);
         }
     };
 
-    this.setDataNames = function (key, values) {
-        var _this3 = this;
-
-        var target = chart.series.find(function (ser) {
-            return ser.name === key || ser.name === _this3.nameMap[key];
+    this.setDataNames = function(key, values) {
+        let target = chart.series.find((ser) => {
+            return ser.name === key || ser.name === this.nameMap[key];
         });
-        target.data.forEach(function (elem, idx) {
+        target.data.forEach((elem, idx) => {
             if (!values[idx]) {
                 return;
             }
-            elem.update({ name: values[idx] });
+            elem.update({name: values[idx]});
         });
-    };
+    }
+
 
     /**
     * 設定Y軸的標籤
@@ -292,7 +288,7 @@ var PochartController = function PochartController(chart, config) {
     * @param {string} title - 標籤的內容
     */
     this.setYAxisLabel = function (key, title) {
-        this.updateAxisConfig(key, "title", { "text": title });
+        this.updateAxisConfig(key, "title", {"text": title});
     };
 
     /**
@@ -304,7 +300,7 @@ var PochartController = function PochartController(chart, config) {
         this.updateAxisConfig(key, "min", value);
     };
 
-    /** 
+    /**
     * 設定Y軸的最大值
     * @param {string} key - DataTable的欄位名稱
     * @param {number} value - 最大值
@@ -313,16 +309,17 @@ var PochartController = function PochartController(chart, config) {
         this.updateAxisConfig(key, "max", value);
     };
 
+
     /**
      * 設定資料欄位在圖表中的標題A
      * @param {string} key -  DataTable中資料欄位的key
      * @param {string} title - 在圖表中的標題
      */
     this.setLegendTitle = function (key, title) {
-        var idx = keys.indexOf(key);
-        var target = chart.legend.allItems[idx];
+        let idx = keys.indexOf(key);
+        let target = chart.legend.allItems[idx];
         if (target) {
-            target.update({ name: title });
+            target.update({name: title});
             this.nameMap[key] = title;
         }
     };
@@ -332,16 +329,14 @@ var PochartController = function PochartController(chart, config) {
      * @param {string} title
      */
     this.setTitle = function () {
-        chart.setTitle({ text: arguments[0] });
+        chart.setTitle({text: arguments[0]});
     };
 
     /**
      * 設定長條圖是否堆疊
      * @param {boolean} flag - 是否讓column chart進行堆疊
      */
-    this.toggleStackedColumn = function () {
-        var flag = arguments.length > 0 &amp;&amp; arguments[0] !== undefined ? arguments[0] : false;
-
+    this.toggleStackedColumn = function (flag = false) {
         if (flag) {
             flag = "normal";
         } else {
@@ -354,11 +349,11 @@ var PochartController = function PochartController(chart, config) {
                 }
             }
         });
-    };
-};
+    }
+}
 
 /** @namespace */
-var Pochart = {};
+let Pochart = {};
 Pochart.initialized = false;
 Pochart.action_queue = [];
 
@@ -399,36 +394,34 @@ Pochart.load = function (url, callback) {
         res.src = url;
         document.getElementsByTagName("body")[0].appendChild(res);
     }
-};
+}
 
 /**
  * detect whether Highcharts has been loaed
  * if not, pause all (attachChart) actions unitl Highcharts be loaded
  */
 Pochart.initialize = function () {
-    var _this4 = this;
-
     if (!this.IsHcLoaded()) {
-        this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css', function () {
-            _this4.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js');
+        this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css', () => {
+            this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js');
         });
     }
 
-    setInterval(function () {
-        if (_this4.action_queue.length === 0 || !_this4.IsHcLoaded()) {
+    setInterval(() => {
+        if (this.action_queue.length === 0 || !this.IsHcLoaded()) {
             return;
         }
-        var action = _this4.action_queue.pop();
+        let action = this.action_queue.pop();
         if (action) {
             action();
         }
     }, 50);
     this.initialized = true;
-};
+}
 
 Pochart.IsHcLoaded = function () {
-    return typeof Highcharts !== "undefined" &amp;&amp; typeof Highcharts !== "null";
-};
+    return typeof Highcharts !== "undefined" &amp;&amp; typeof Highcharts !== "null"
+}
 
 /**
  * craete a PochartContollerPorxy that will delay all actions until Highcharts loaded
@@ -439,38 +432,34 @@ Pochart.IsHcLoaded = function () {
  * @return {PochartController}
  */
 Pochart.attachChart = function () {
-    var _arguments = arguments;
-
     if (!this.initialized) {
         this.initialize();
     }
-    var proxiedObject = null;
-    this.action_queue.push(function () {
-        proxiedObject = _Pochart.attachChart.apply(_Pochart, _arguments);
+    let proxiedObject = null;
+    this.action_queue.push(() => {
+        proxiedObject = _Pochart.attachChart.apply(_Pochart, arguments);
     });
-    var NullChartObj = new PochartController({}, { series: [] });
-    var properties = Object.getOwnPropertyNames(new PochartController({}, { series: [] })).filter(function (p) {
+    let NullChartObj = new PochartController({}, {series:[]});
+    let properties = Object.getOwnPropertyNames(new PochartController({}, {series:[]})).filter((p) => {
         return typeof NullChartObj[p] === "function";
     });
-    var proxy = {};
+    let proxy = {};
     proxy.action_queue = [];
-    setInterval(function () {
+    setInterval(() => {
         if (proxy.action_queue.length == 0 || proxiedObject == null) {
             return;
         }
-        var action = proxy.action_queue.pop();
+        let action = proxy.action_queue.pop();
         if (action) {
             action();
         }
     }, 50);
-    properties.forEach(function (p) {
+    properties.forEach((p) => {
         proxy[p] = function () {
-            var _arguments2 = arguments;
-
-            proxy.action_queue.push(function () {
-                proxiedObject[p].apply(proxiedObject, _arguments2);
+            proxy.action_queue.push(() => {
+                proxiedObject[p].apply(proxiedObject, arguments);
             });
-        };
+        }
     });
     return proxy;
 };
@@ -478,7 +467,7 @@ Pochart.attachChart = function () {
 /** @constructor
  * @param {string} id
  */
-var Axis = function Axis(id) {
+let Axis = function (id) {
     /**
      *  unique id for each Axis
      */
@@ -487,7 +476,8 @@ var Axis = function Axis(id) {
      *  若opposite為ture，那此Y軸則會放在表的右手邊
      */
     this.opposite = false;
-};</code></pre>
+}
+</code></pre>
         </article>
     </section>
 
@@ -503,7 +493,7 @@ var Axis = function Axis(id) {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Jan 10 2017 17:41:36 GMT+0800 (台北標準時間)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Tue Feb 14 2017 08:21:09 GMT+0800 (台北標準時間)
 </footer>
 
 <script> prettyPrint(); </script>
