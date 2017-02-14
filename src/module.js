@@ -1,94 +1,4 @@
 ﻿"use strict";
-String.prototype.endsWith = String.prototype.endsWith || function(searchString, position) {
-    var subjectString = this.toString();
-    if (typeof position !== 'number' || !isFinite(position) || Math.floor(position) !== position || position > subjectString.length) {
-        position = subjectString.length;
-    }
-    position -= searchString.length;
-    var lastIndex = subjectString.lastIndexOf(searchString, position);
-    return lastIndex !== -1 && lastIndex === position;
-};
-
-Array.prototype.find = Array.prototype.find || function(predicate) {
-    'use strict';
-    if (this == null) {
-        throw new TypeError('Array.prototype.find called on null or undefined');
-    }
-    if (typeof predicate !== 'function') {
-        throw new TypeError('predicate must be a function');
-    }
-    var list = Object(this);
-    var length = list.length >>> 0;
-    var thisArg = arguments[1];
-
-    for (var i = 0; i !== length; i++) {
-        if (predicate.call(thisArg, this[i], i, list)) {
-            return this[i];
-        }
-    }
-    return undefined;
-}
-
-Array.prototype.map = Array.prototype.map || function(callback, thisArg) {
-    var T, A, k;
-    if (this == null) {
-        throw new TypeError(' this is null or not defined');
-    }
-    var O = Object(this);
-    var len = O.length >>> 0;
-    if (typeof callback !== 'function') {
-        throw new TypeError(callback + ' is not a function');
-    }
-    if (arguments.length > 1) {
-        T = thisArg;
-    }
-    A = new Array(len);
-    k = 0;
-    while (k < len) {
-        var kValue, mappedValue;
-        if (k in O) {
-            kValue = O[k];
-            mappedValue = callback.call(T, kValue, k, O);
-            A[k] = mappedValue;
-        }
-        k++;
-    }
-    return A;
-}
-
-Array.prototype.some = Array.prototype.some || function(evaluator, thisArg) {
-    'use strict';
-    if (!this) {
-        throw new TypeError('Array.prototype.some called on null or undefined');
-    }
-
-    if (typeof(evaluator) !== 'function') {
-        if (typeof(evaluator) === 'string') {
-            if ( ! (evaluator = eval(evaluator)) ){
-                throw new TypeError();
-            }
-        } else {
-            throw new TypeError();
-        }
-    }
-
-    var i;
-    if (thisArg===undefined){
-        for (i in this) {
-            if (evaluator(this[i], i, this)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    for (i in this) {
-        if (evaluator.call(thisArg, this[i], i, this)) {
-            return true;
-        }
-    }
-    return false;
-}
-
 let _Pochart = {
     priority: ["area", "column", "bar", "pie", "line", "spline", "scatter"]
 }
@@ -187,8 +97,6 @@ _Pochart.attachChart = function (domElement, dataTable) {
 /**
  * PochartController
  * @constructor
- * @param {highchart} chart - Highchart物件
- * @param {object} config - 設定
  */
 let PochartController = function (chart, config) {
     this.nameMap = {};
@@ -203,6 +111,7 @@ let PochartController = function (chart, config) {
 
     /**
      * 設定X軸的刻度內容
+     * <img src="../res/setXAxis.png" />
      * @param {array} kyes
      */
     this.setXAxis = function () {
@@ -213,6 +122,14 @@ let PochartController = function (chart, config) {
      * 依據DataTable的欄位名稱來找出相對應的y軸
      * @param {string} key - DataTable的欄位名稱
      * @return {Axis}
+     * @example
+     * controller = Pochart.attachChart(
+     *      "div-id", // div to displau chart
+     *      [{col1: 1, column2: 2},{col1: 3, column2: 4}] // data
+     * );
+     * controller.findYAxis("column1"); // exception
+     * controller.findYAxis("col1"); // success!
+     * controller.findYAxis("column2"); // success!
      */
     this.findYAxis = function (key) {
         let result = chart.yAxis.find((axis) => {
@@ -256,6 +173,7 @@ let PochartController = function (chart, config) {
 
     /**
     * 設定Y軸的標籤
+    * <img src="../res/setYAxisLabel.png" />
     * @param {string} key - DataTable的欄位名稱
     * @param {string} title - 標籤的內容
     */
@@ -265,6 +183,7 @@ let PochartController = function (chart, config) {
 
     /**
     * 設定Y軸的最小值
+    * <img src="../res/setYAxisMinValue.png" />
     * @param {string} key - DataTable的欄位名稱
     * @param {number} value - 最小值
     */
@@ -274,6 +193,7 @@ let PochartController = function (chart, config) {
 
     /**
     * 設定Y軸的最大值
+    * <img src="../res/setYAxisMaxValue.png" />
     * @param {string} key - DataTable的欄位名稱
     * @param {number} value - 最大值
     */
@@ -283,7 +203,8 @@ let PochartController = function (chart, config) {
 
 
     /**
-     * 設定資料欄位在圖表中的標題A
+     * 設定資料欄位在圖表中的標題
+    * <img src="../res/setLegendTitle.png" />
      * @param {string} key -  DataTable中資料欄位的key
      * @param {string} title - 在圖表中的標題
      */
@@ -298,6 +219,7 @@ let PochartController = function (chart, config) {
 
     /**
      * 設定圖表標題
+    * <img src="../res/setTitle.png" />
      * @param {string} title
      */
     this.setTitle = function () {
@@ -307,6 +229,12 @@ let PochartController = function (chart, config) {
     /**
      * 設定長條圖是否堆疊
      * @param {boolean} flag - 是否讓column chart進行堆疊
+     * @example
+     * //to enable:
+     * controller.toggleStackedColumn(true);
+     * controller.toggleStackedColumn();
+     * //to disable:
+     * controller.toggleStackedColumn(false);
      */
     this.toggleStackedColumn = function (flag = false) {
         if (flag) {
@@ -347,9 +275,11 @@ Pochart.load = function (url, callback) {
     }
     if (res.readyState) {
         res.onreadystatechange = function () {
-            if (script.readyState == "loaded" || script.readyState == "complete") {
-                script.onreadystatechange = null;
-                callback();
+            if (res.readyState == "loaded" || res.readyState == "complete") {
+                res.onreadystatechange = null;
+                if (callback) {
+                    callback();
+                }
             }
         };
     } else {
@@ -369,8 +299,8 @@ Pochart.load = function (url, callback) {
 }
 
 /**
- * detect whether Highcharts has been loaed
- * if not, pause all (attachChart) actions unitl Highcharts be loaded
+ * detect whether Highcharts has been loaded<br/>
+ * if not, postpone all (attachChart) actions unitl Highcharts be loaded
  */
 Pochart.initialize = function () {
     if (!this.IsHcLoaded()) {
@@ -396,7 +326,7 @@ Pochart.IsHcLoaded = function () {
 }
 
 /**
- * craete a PochartContollerPorxy that will delay all actions until Highcharts loaded
+ * craete a PochartContollerPorxy that will delay all actions until Highcharts been loaded
  * @param {string} domElement - 目標的DOM或是該DOM的id
  * @param {json} dataTable - 從DataTable序列化出來的json資料
  * @param {array} [[]] ordering - 各個欄位繪圖的順序，由底下往上排序

@@ -13,7 +13,7 @@
         {
             return Math.floor(Math.random()*(max-min+1)+min);
         }
-        let oee_data = [
+        var oee_data = [
             {date: "20161201", lot_count: randomIntFromInterval(9000, 11111), expected_count: randomIntFromInterval(10000, 11000)},
             {date: "20161202", lot_count: randomIntFromInterval(9000, 11111), expected_count: randomIntFromInterval(10000, 11000)},
             {date: "20161203", lot_count: randomIntFromInterval(9000, 11111), expected_count: randomIntFromInterval(10000, 11000)},
@@ -42,8 +42,8 @@
             {date: "20161226", lot_count: randomIntFromInterval(9000, 11111), expected_count: randomIntFromInterval(10000, 11000)},
             {date: "20161227", lot_count: randomIntFromInterval(9000, 11111), expected_count: randomIntFromInterval(10000, 11000)},
         ];
-        for (let i = 0; i < oee_data.length; i++) {
-            let data = oee_data[i];
+        for (var i = 0; i < oee_data.length; i++) {
+            var data = oee_data[i];
             data.ratio = (data.lot_count / data.expected_count * 100).toFixed(0) / 1
         }
 
@@ -53,7 +53,7 @@
         });
         chart.setTitle("OEE");
         chart.setXAxis((function () {
-            let xAxis = [];
+            var xAxis = [];
             oee_data.forEach(function (data) {
                 xAxis.push(data.date);
             });
@@ -72,7 +72,7 @@
             expected_count: {yAxis: {id: "for_line"}}
         });
         chart2.setXAxis((function () {
-            let xAxis = [];
+            var xAxis = [];
             oee_data.forEach(function (data) {
                 xAxis.push(data.date);
             });
