@@ -32,11 +32,20 @@ _Pochart.attachChart = function (domElement, dataTable) {
         for (let j = 0; j < dataTable.length; j++) {
             data.push(dataTable[j][key]);
         }
-        let ser = {
-            type: config.type || "line",
-            data: data,
-            name: config.name || key
-        };
+        // let ser = {
+        //     type: config.type || "line",
+        //     data: data,
+        //     name: config.name || key
+        // };
+        let ser = {}
+        for (var property in config) {
+            if (config.hasOwnProperty(property)) {
+                ser[property] = config[property];
+            }
+        }
+        ser.type = ser.type || "line";
+        ser.name = ser.name || key;
+        ser.data = data;
 
         if (typeof config.events === "object") {
             //ser.events = config.events
@@ -82,15 +91,27 @@ _Pochart.attachChart = function (domElement, dataTable) {
         return this.priority.indexOf(ser.type) - this.priority.indexOf(ser2.type);
     });
     keys = series.map((ser) => {return ser.name});
-    let chart_config = {
-        series: series
+
+    let chart_config = { }
+    if (typeof arguments[4] === "object") {
+        for (var property in arguments[4]) {
+            if (arguments[4].hasOwnProperty(property)) {
+                chart_config[property] = arguments[4][property];
+            }
+        }
     }
+    chart_config.series = series;
     if (yAxis.length > 0) {
         chart_config.yAxis = yAxis;
     }
 
     let chart = Highcharts.chart(domElement, chart_config);
 
+
+    var onComplete = arguments[arguments.length - 1];
+    if (typeof onComplete === "function") {
+        onComplete(chart)
+    }
     return new PochartController(chart, chart_config)
 }
 
@@ -108,6 +129,10 @@ let PochartController = function (chart, config) {
     this.GetHighchart = function () {
         return chart;
     };
+
+    this.update = function () {
+        chart.update.apply(chart, arguments);
+    }
 
     /**
      * 設定X軸的刻度內容
@@ -313,9 +338,9 @@ Pochart.initialize = function () {
         if (this.action_queue.length === 0 || !this.IsHcLoaded()) {
             return;
         }
-        let action = this.action_queue.pop();
+        let action = this.action_queue.shift();
         if (action) {
-            action();
+            return action();
         }
     }, 50);
     this.initialized = true;
@@ -359,7 +384,7 @@ Pochart.attachChart = function () {
     properties.forEach((p) => {
         proxy[p] = function () {
             proxy.action_queue.push(() => {
-                proxiedObject[p].apply(proxiedObject, arguments);
+                return proxiedObject[p].apply(proxiedObject, arguments);
             });
         }
     });
