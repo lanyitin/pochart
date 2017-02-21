@@ -7,6 +7,13 @@
     <body>
         <div id="chart"></div>
         <div id="chart2"></div>
+        <div id="chart-demo"></div>
+        <pre>
+demo_chart.setTitle("Demo Chart");
+demo_chart.setYAxisLabel("ratio", "oee");
+demo_chart.setYAxisLabel("lot_count", "產量");
+demo_chart.setXAxis(/** date values in data */);
+        </pre>
         <script src="dist/pochart.js"></script>
         <script type="text/javascript">
         var randomIntFromInterval = function (min,max)
@@ -48,7 +55,7 @@
         }
 
         window.chart = Pochart.attachChart("chart", oee_data, ["lot_count", "ratio", "expected_count"], {
-            expected_count: {type: "column", events: {click: function () {console.log(this, arguments)}}},
+            expected_count: {type: "column"},
             lot_count: {type: "column"},
         });
         chart.setTitle("OEE");
@@ -65,6 +72,11 @@
         chart.setLegendTitle("lot_count", "實際產出");
         chart.setLegendTitle("expected_count", "預期產出");
         chart.setYAxisMinValue("ratio", 0);
+        chart.addEvent("lot_count", "click", console.log);
+
+
+
+
 
         window.chart2 = Pochart.attachChart("chart2", oee_data, ["expected_count", "lot_count", "ratio"], {
             lot_count: {type: "pie"},
@@ -72,6 +84,22 @@
             expected_count: {yAxis: {id: "for_line"}}
         });
         chart2.setXAxis((function () {
+            var xAxis = [];
+            oee_data.forEach(function (data) {
+                xAxis.push(data.date);
+            });
+            return xAxis;
+        })());
+
+        window.demo_chart = Pochart.attachChart("chart-demo", oee_data, ["ratio", "lot_count", "expected_count"], {
+            lot_count: {type: "column"},
+            expected_count: {type: "column"},
+            ratio: {type: "column"}
+        });
+        demo_chart.setTitle("Demo Chart");
+        demo_chart.setYAxisLabel("ratio", "oee");
+        demo_chart.setYAxisLabel("lot_count", "產量");
+        demo_chart.setXAxis((function () {
             var xAxis = [];
             oee_data.forEach(function (data) {
                 xAxis.push(data.date);

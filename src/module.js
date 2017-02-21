@@ -3,9 +3,7 @@ let _Pochart = {
     priority: ["area", "column", "bar", "pie", "line", "spline", "scatter"]
 }
 /**
- * attach a chart to existed dom
- * @param {string} domElement - 目標的DOM或是該DOM的id
- * @param {json} dataTable - 從DataTable序列化出來的json資料
+ * {@link Pochart.attachChart}
  */
 _Pochart.attachChart = function (domElement, dataTable) {
     if (typeof(domElement) === "string") {
@@ -30,13 +28,13 @@ _Pochart.attachChart = function (domElement, dataTable) {
         let data = [];
         let config = configs[key] || {};
         for (let j = 0; j < dataTable.length; j++) {
-            data.push(dataTable[j][key]);
+            let convert = Number(dataTable[j][key]);
+            if (isNaN(convert)) {
+                console.warn(`there is a ${typeof dataTable[j][key]} value in ${key}, so we aren't going to display data in ${key} on chart`);
+                return;
+            }
+            data.push(convert);
         }
-        // let ser = {
-        //     type: config.type || "line",
-        //     data: data,
-        //     name: config.name || key
-        // };
         let ser = {}
         for (var property in config) {
             if (config.hasOwnProperty(property)) {
@@ -107,12 +105,12 @@ _Pochart.attachChart = function (domElement, dataTable) {
 
     let chart = Highcharts.chart(domElement, chart_config);
 
-
+    let ctrl = new PochartController(chart, chart_config)
     var onComplete = arguments[arguments.length - 1];
     if (typeof onComplete === "function") {
-        onComplete(chart)
+        onComplete(chart, ctrl)
     }
-    return new PochartController(chart, chart_config)
+    return ctrl;
 }
 
 /**
@@ -122,12 +120,13 @@ _Pochart.attachChart = function (domElement, dataTable) {
 let PochartController = function (chart, config) {
     this.nameMap = {};
     let keys = config.series.map((ser) => {return ser.name;});
+
     /**
-     * 取得Highchart物件
-     * @return {object}
+     * 透過callback的方式直接操作{@link http://api.highcharts.com/highcharts/Chart|Highchart.Chart}
+     * @param {PochartController~ManipulateHighchartCallback}
      */
-    this.GetHighchart = function () {
-        return chart;
+    this.manipulateHighchart = function (callback) {
+        callback(chart, this);
     };
 
     this.update = function () {
@@ -144,9 +143,10 @@ let PochartController = function (chart, config) {
     };
 
     /**
-     * 依據DataTable的欄位名稱來找出相對應的y軸
+     * @private
+     * 依據DataTable的欄位名稱來找出相對應的y軸{@link http://api.highcharts.com/highcharts/yAxis|Highchart.yAxis}
      * @param {string} key - DataTable的欄位名稱
-     * @return {Axis}
+     * @return {object}
      * @example
      * controller = Pochart.attachChart(
      *      "div-id", // div to displau chart
@@ -167,6 +167,49 @@ let PochartController = function (chart, config) {
         }
         return result;
     };
+    /**
+     * @private
+     * 依據DataTable的欄位名稱來找出相對應的{@link http://www.highcharts.com/docs/chart-concepts/series|Highchart.Series}
+     * @param {string} key - DataTable的欄位名稱
+     * @return {object}
+     */
+    this.findSeries = function (key) {
+        let target = chart.series.find((ser) => {
+            return ser.name === key || ser.name === this.nameMap[key];
+        });
+        if (!target) {
+            console.error(`can't find series for "${key}", please make sure that input data has that colum"`);
+        }
+        return target;
+    }
+
+    /**
+     * 替特定的資料增加事件處理
+     * @param {string} key - DataTable的欄位名稱
+     * @param {string} event_name - 事件的名稱，如click mouseover ...
+     * @param {PochartController~EventCallback} callback
+     */
+    this.addEvent = function (key, event_name, callback) {
+        let target = this.findSeries(key);
+        Highcharts.addEvent(target,event_name, function (e) {
+            callback.bind(e.point)(event.point.y, event.point.category, event.point.x);
+        });
+    };
+
+    /**
+     * 設定series的屬性
+     * @param {string} key - 在DataTable中的資料欄位key直
+     * @param {string} property_name - 屬性名稱
+     * @param {string} value
+     */
+    this.updateSeriesConfig = function (key, property_name, value) {
+        let target = this.findSeries(key);
+        if (target) {
+            let config = {};
+            config[property_name] = value;
+            target.update(config, true);
+        }
+    };
 
     /**
      * 設定y軸的屬性
@@ -184,9 +227,7 @@ let PochartController = function (chart, config) {
     };
 
     this.setDataNames = function(key, values) {
-        let target = chart.series.find((ser) => {
-            return ser.name === key || ser.name === this.nameMap[key];
-        });
+        let target = this.findSeries(key);
         target.data.forEach((elem, idx) => {
             if (!values[idx]) {
                 return;
@@ -197,31 +238,31 @@ let PochartController = function (chart, config) {
 
 
     /**
-    * 設定Y軸的標籤
-    * <img src="../res/setYAxisLabel.png" />
-    * @param {string} key - DataTable的欄位名稱
-    * @param {string} title - 標籤的內容
-    */
+     * 設定Y軸的標籤
+     * <img src="../res/setYAxisLabel.png" />
+     * @param {string} key - DataTable的欄位名稱
+     * @param {string} title - 標籤的內容
+     */
     this.setYAxisLabel = function (key, title) {
         this.updateAxisConfig(key, "title", {"text": title});
     };
 
     /**
-    * 設定Y軸的最小值
-    * <img src="../res/setYAxisMinValue.png" />
-    * @param {string} key - DataTable的欄位名稱
-    * @param {number} value - 最小值
-    */
+     * 設定Y軸的最小值
+     * <img src="../res/setYAxisMinValue.png" />
+     * @param {string} key - DataTable的欄位名稱
+     * @param {number} value - 最小值
+     */
     this.setYAxisMinValue = function (key, value) {
         this.updateAxisConfig(key, "min", value);
     };
 
     /**
-    * 設定Y軸的最大值
-    * <img src="../res/setYAxisMaxValue.png" />
-    * @param {string} key - DataTable的欄位名稱
-    * @param {number} value - 最大值
-    */
+     * 設定Y軸的最大值
+     * <img src="../res/setYAxisMaxValue.png" />
+     * @param {string} key - DataTable的欄位名稱
+     * @param {number} value - 最大值
+     */
     this.setYAxisMaxValue = function (key, value) {
         this.updateAxisConfig(key, "max", value);
     };
@@ -229,7 +270,7 @@ let PochartController = function (chart, config) {
 
     /**
      * 設定資料欄位在圖表中的標題
-    * <img src="../res/setLegendTitle.png" />
+     * <img src="../res/setLegendTitle.png" />
      * @param {string} key -  DataTable中資料欄位的key
      * @param {string} title - 在圖表中的標題
      */
@@ -244,12 +285,25 @@ let PochartController = function (chart, config) {
 
     /**
      * 設定圖表標題
-    * <img src="../res/setTitle.png" />
+     * <img src="../res/setTitle.png" />
      * @param {string} title
      */
     this.setTitle = function () {
         chart.setTitle({text: arguments[0]});
     };
+
+
+    /**
+     * 設定圖的高度
+     * @param {int} height
+     */
+    this.setChartHeight = function (height) {
+        this.update({
+            "chart": {
+                "height": height
+            }
+        });
+    }
 
     /**
      * 設定長條圖是否堆疊
@@ -272,6 +326,18 @@ let PochartController = function (chart, config) {
                 column: {
                     stacking: flag
                 }
+            }
+        });
+    }
+
+    /**
+     * 設定圖是否顯示Hightchart.com
+     * @param {boolean} flag - true為顯示，false則不
+     */
+    this.toggleCredit = function (flag = false) {
+        this.update({
+            credits: {
+                enabled: flag
             }
         });
     }
@@ -342,7 +408,7 @@ Pochart.initialize = function () {
         if (action) {
             return action();
         }
-    }, 50);
+    }, 10);
     this.initialized = true;
 }
 
@@ -354,8 +420,10 @@ Pochart.IsHcLoaded = function () {
  * craete a PochartContollerPorxy that will delay all actions until Highcharts been loaded
  * @param {string} domElement - 目標的DOM或是該DOM的id
  * @param {json} dataTable - 從DataTable序列化出來的json資料
- * @param {array} [[]] ordering - 各個欄位繪圖的順序，由底下往上排序
- * @param {json} [{}] configs - 各個欄位繪圖的設定
+ * @param {array} [ordering]  - 各個欄位繪圖的順序，由底下往上排序
+ * @param {json} [series_config]  - 各個欄位繪圖的設定 <img src="../res/Highchart.chart_options_series.png" />
+ * @param {json} [chart_config] - 圖表的全域設定 <img src="../res/Highchart.chart_options.png" />
+ * @param {function} [callback]
  * @return {PochartController}
  */
 Pochart.attachChart = function () {
@@ -367,40 +435,33 @@ Pochart.attachChart = function () {
         proxiedObject = _Pochart.attachChart.apply(_Pochart, arguments);
     });
     let NullChartObj = new PochartController({}, {series:[]});
-    let properties = Object.getOwnPropertyNames(new PochartController({}, {series:[]})).filter((p) => {
+    let properties = Object.getOwnPropertyNames(NullChartObj).filter((p) => {
         return typeof NullChartObj[p] === "function";
     });
     let proxy = {};
-    proxy.action_queue = [];
-    setInterval(() => {
-        if (proxy.action_queue.length == 0 || proxiedObject == null) {
-            return;
-        }
-        let action = proxy.action_queue.pop();
-        if (action) {
-            action();
-        }
-    }, 50);
     properties.forEach((p) => {
-        proxy[p] = function () {
-            proxy.action_queue.push(() => {
+        proxy[p] = (function () {
+            this.action_queue.push(() => {
                 return proxiedObject[p].apply(proxiedObject, arguments);
             });
-        }
+        }).bind(this)
     });
+    proxy.toggleCredit(false);
     return proxy;
 };
 
-/** @constructor
- * @param {string} id
+/**
+ * event callback.
+ * @callback PochartController~EventCallback
+ * @this Highchart.Point - {@link http://api.highcharts.com/highcharts/Point}
+ * @param {number} y - 該點資料的值
+ * @param {string} category - 該點資料所屬的分類
+ * @param {number} x
  */
-let Axis = function (id) {
-    /**
-     *  unique id for each Axis
-     */
-    this.id = id;
-    /**
-     *  若opposite為ture，那此Y軸則會放在表的右手邊
-     */
-    this.opposite = false;
-}
+
+/**
+ * ManipulateHighchart callback.
+ * @callback PochartController~ManipulateHighchartCallback
+ * @param {Highchart.Chart} chart - {@link http://api.highcharts.com/highcharts/Chart}
+ * @param {PochartController} ctrl
+ */
