@@ -404,9 +404,12 @@ Pochart.initialize = function () {
         if (this.action_queue.length === 0 || !this.IsHcLoaded()) {
             return;
         }
-        let action = this.action_queue.shift();
-        if (action) {
-            return action();
+        let action_count  = ths.action_queue.length;
+        for (let i = 0; i < action_count; i++) {
+            let action = this.action_queue.shift();
+            if (action) {
+                return action();
+            }
         }
     }, 10);
     this.initialized = true;
