@@ -2,9 +2,6 @@
 let _Pochart = {
     priority: ["area", "column", "bar", "pie", "line", "spline", "scatter"]
 }
-/**
- * {@link Pochart.attachChart}
- */
 let helper = {};
 helper.getElement = (domElement) => {
     if (typeof(domElement) === "string") {
@@ -15,6 +12,10 @@ helper.getElement = (domElement) => {
     }
     return domElement;
 }
+
+/**
+ * {@link Pochart~attachChart}
+ */
 _Pochart.attachChart = function (domElement, dataTable) {
     let chart_config = {};
     let series_configs = arguments[2] || {};
@@ -417,20 +418,21 @@ Pochart.load = function (url, callback, err_callback) {
  * if not, postpone all (attachChart) actions unitl Highcharts be loaded
  */
 Pochart.initialize = function () {
-    this.deferred = Q.defer();
-    if (!this.IsHcLoaded()) {
-        this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css', () => {
-            this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js', () => {
-                this.deferred.resolve();
-            }, (err) => {this.deferred.reject(err)});
-        }, (err) => {this.deferred.reject(err)});
-    } else {
-        this.deferred.resolve();
-    }
+    this.promise = new Q.Promise((resolve, reject) => {
+        if (!this.IsHcLoaded()) {
+            this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css', () => {
+                this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js', () => {
+                    resolve();
+                }, (err) => {reject(err)});
+            }, (err) => {reject(err)});
+        } else {
+            resolve();
+        }
+    });
 }
 
 Pochart.initialized = function () {
-    return this["deferred"] !== null && this["deferred"] !== undefined;
+    return this["promise"] !== null && this["promise"] !== undefined;
 }
 
 Pochart.IsHcLoaded = function () {
@@ -449,10 +451,10 @@ Pochart.IsHcLoaded = function () {
 Pochart.attachChart = function () {
     if (!this.initialized()) {
         this.initialize();
-        this.deferred.promise.fail((err) => {console.error("unable to load Highchars", err.srcElement.src, err);});
+        this.promise.fail((err) => {console.error("unable to load Highchars", err.srcElement.src, err);});
     }
     let proxiedObject = null;
-    this.deferred.promise.then(() => {
+    this.promise.then(() => {
         proxiedObject = _Pochart.attachChart.apply(_Pochart, arguments);
     });
     let NullChartObj = new PochartController({}, {series:[]});
@@ -463,7 +465,7 @@ Pochart.attachChart = function () {
     proxy.isProxy = true;
     properties.forEach((p) => {
         proxy[p] = (function () {
-            this.deferred.promise.then(() => {
+            this.promise.then(() => {
                 return proxiedObject[p].apply(proxiedObject, arguments);
             });
         }).bind(this)
