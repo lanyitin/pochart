@@ -8,12 +8,6 @@
         <div id="chart"></div>
         <div id="chart2"></div>
         <div id="chart-demo"></div>
-        <pre>
-demo_chart.setTitle("Demo Chart");
-demo_chart.setYAxisLabel("ratio", "oee");
-demo_chart.setYAxisLabel("lot_count", "產量");
-demo_chart.setXAxis(/** date values in data */);
-        </pre>
         <script src="dist/pochart.all.js"></script>
         <script type="text/javascript">
         var randomIntFromInterval = function (min,max)
@@ -54,18 +48,13 @@ demo_chart.setXAxis(/** date values in data */);
             data.ratio = (data.lot_count / data.expected_count * 100).toFixed(0) / 1
         }
 
-        window.chart = Pochart.attachChart("chart", oee_data, ["lot_count", "ratio", "expected_count"], {
+        window.chart = Pochart.attachChart("chart", oee_data, {
+            ratio: null,
             expected_count: {type: "column"},
             lot_count: {type: "column"},
+            date: "xAxis"
         });
         chart.setTitle("OEE");
-        chart.setXAxis((function () {
-            var xAxis = [];
-            oee_data.forEach(function (data) {
-                xAxis.push(data.date);
-            });
-            return xAxis;
-        })());
         chart.setYAxisLabel("ratio", "百分比%");
         chart.setYAxisLabel("lot_count", "數量");
         chart.setLegendTitle("ratio", "OEE");
@@ -73,39 +62,6 @@ demo_chart.setXAxis(/** date values in data */);
         chart.setLegendTitle("expected_count", "預期產出");
         chart.setYAxisMinValue("ratio", 0);
         chart.addEvent("lot_count", "click", console.log);
-
-
-
-
-
-        window.chart2 = Pochart.attachChart("chart2", oee_data, ["expected_count", "lot_count", "ratio"], {
-            lot_count: {type: "pie"},
-            ratio: {type: "spline", yAxis: {id: "for_line"}},
-            expected_count: {yAxis: {id: "for_line"}}
-        });
-        chart2.setXAxis((function () {
-            var xAxis = [];
-            oee_data.forEach(function (data) {
-                xAxis.push(data.date);
-            });
-            return xAxis;
-        })());
-
-        window.demo_chart = Pochart.attachChart("chart-demo", oee_data, ["ratio", "lot_count", "expected_count"], {
-            lot_count: {type: "column"},
-            expected_count: {type: "column"},
-            ratio: {type: "column"}
-        });
-        demo_chart.setTitle("Demo Chart");
-        demo_chart.setYAxisLabel("ratio", "oee");
-        demo_chart.setYAxisLabel("lot_count", "產量");
-        demo_chart.setXAxis((function () {
-            var xAxis = [];
-            oee_data.forEach(function (data) {
-                xAxis.push(data.date);
-            });
-            return xAxis;
-        })());
         </script>
     </body>
 </html>

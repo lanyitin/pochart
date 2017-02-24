@@ -5,28 +5,32 @@ let _Pochart = {
 /**
  * {@link Pochart.attachChart}
  */
-_Pochart.attachChart = function (domElement, dataTable) {
+let helper = {};
+helper.getElement = (domElement) => {
     if (typeof(domElement) === "string") {
         domElement = document.getElementById(domElement);
     }
     if (typeof domElement.nodeName === "undefined") {
         console.error(domElement, "is not a dom element");
-        return;
     }
-    let keys = arguments[2];
-    if (keys === undefined) {
+    return domElement;
+}
+_Pochart.attachChart = function (domElement, dataTable) {
+    let chart_config = {};
+    let series_configs = arguments[2] || {};
+    domElement = helper.getElement(domElement);
+
+    let keys = null;
+    if (arguments[2] == null) {
         keys = Object.keys(dataTable[0]);
+    } else {
+        keys = Object.keys(series_configs);
     }
-    if (!Array.isArray(keys)) {
-        console.error(`keys should be a array, but we got ${JSON.stringify(keys)}`);
-        keys = Object.keys(dataTable[0]);
-    }
-    let configs = arguments[3] || {};
     let series = [];
 
-    keys.forEach(function (key) {
+    keys.forEach((key) => {
         let data = [];
-        let config = configs[key] || {};
+        let config = series_configs[key] = series_configs[key] || {};
         for (let j = 0; j < dataTable.length; j++) {
             let convert = Number(dataTable[j][key]);
             if (isNaN(convert)) {
@@ -34,6 +38,11 @@ _Pochart.attachChart = function (domElement, dataTable) {
                 return;
             }
             data.push(convert);
+        }
+        if (config.toString().toLowerCase() == "xaxis") {
+            chart_config.xAxis = {};
+            chart_config.xAxis.categories = data;
+            return;
         }
         let ser = {}
         for (var property in config) {
@@ -50,7 +59,7 @@ _Pochart.attachChart = function (domElement, dataTable) {
             ser.events = {}
             for (var property in config.events) {
                 if (config.events.hasOwnProperty(property)) {
-                    ser.events[property] = (function (event) {
+                    ser.events[property] = ((event) => {
                         config.events[property].bind(event.point)(event.point.y, event.point.category, event.point.x);
                     });
                 }
@@ -67,15 +76,15 @@ _Pochart.attachChart = function (domElement, dataTable) {
     });
 
     let yAxis = [];
-    for (let key in configs) {
-        let config = configs[key];
+    for (let key in series_configs) {
+        let config = series_configs[key];
         let exists_axises = yAxis.map((axis) => {return axis.id;});
         if (typeof config.yAxis == "object" && exists_axises.indexOf(config.yAxis.id) < 0) {
             yAxis.push(config.yAxis);
         }
     }
-    series.forEach(function (ser) {
-        let axisName = yAxis.map(function (axis) {return axis.id;});
+    series.forEach((ser) => {
+        let axisName = yAxis.map((axis) => {return axis.id;});
         if (ser.yAxis.indexOf("_pochart_default_yaxis") === 0 && axisName.indexOf(ser.yAxis) < 0) {
             let newAxis = {id: ser.yAxis};
             if (ser.type.indexOf("line") > -1) {
@@ -90,11 +99,10 @@ _Pochart.attachChart = function (domElement, dataTable) {
     });
     keys = series.map((ser) => {return ser.name});
 
-    let chart_config = { }
-    if (typeof arguments[4] === "object") {
-        for (var property in arguments[4]) {
-            if (arguments[4].hasOwnProperty(property)) {
-                chart_config[property] = arguments[4][property];
+    if (typeof arguments[3] === "object") {
+        for (var property in arguments[3]) {
+            if (arguments[3].hasOwnProperty(property)) {
+                chart_config[property] = arguments[3][property];
             }
         }
     }
@@ -191,7 +199,7 @@ let PochartController = function (chart, config) {
      */
     this.addEvent = function (key, event_name, callback) {
         let target = this.findSeries(key);
-        Highcharts.addEvent(target,event_name, function (e) {
+        Highcharts.addEvent(target,event_name, (e) => {
             callback.bind(e.point)(event.point.y, event.point.category, event.point.x);
         });
     };
@@ -226,7 +234,13 @@ let PochartController = function (chart, config) {
         }
     };
 
-    this.setDataNames = function(key, values) {
+    /**
+     * 設定某個Series中各個資料的Label
+     * <img src="../res/setDataNames.png" />
+     * @param {string} key - 在DataTable中的資料欄位key直
+     * @param {array} labels - 各個資料的Label
+     */
+    this.setDataLabels = function(key, values) {
         let target = this.findSeries(key);
         target.data.forEach((elem, idx) => {
             if (!values[idx]) {
@@ -341,6 +355,16 @@ let PochartController = function (chart, config) {
             }
         });
     }
+
+    this.setColors = function (colors) {
+        this.update({
+            "colors": colors
+        });
+    }
+
+    this.setSeriesAsXAxisCategories = function(key) {
+
+    }
 }
 
 /** @namespace */
@@ -417,7 +441,6 @@ Pochart.IsHcLoaded = function () {
  * craete a PochartContollerPorxy that will delay all actions until Highcharts been loaded
  * @param {string} domElement - 目標的DOM或是該DOM的id
  * @param {json} dataTable - 從DataTable序列化出來的json資料
- * @param {array} [ordering]  - 各個欄位繪圖的順序，由底下往上排序
  * @param {json} [series_config]  - 各個欄位繪圖的設定 <img src="../res/Highchart.chart_options_series.png" />
  * @param {json} [chart_config] - 圖表的全域設定 <img src="../res/Highchart.chart_options.png" />
  * @param {function} [callback]
