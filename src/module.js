@@ -143,7 +143,6 @@ let PochartController = function (chart, config) {
     };
 
     /**
-     * @private
      * 依據DataTable的欄位名稱來找出相對應的y軸{@link http://api.highcharts.com/highcharts/yAxis|Highchart.yAxis}
      * @param {string} key - DataTable的欄位名稱
      * @return {object}
@@ -155,6 +154,7 @@ let PochartController = function (chart, config) {
      * controller.findYAxis("column1"); // exception
      * controller.findYAxis("col1"); // success!
      * controller.findYAxis("column2"); // success!
+     * @private
      */
     this.findYAxis = function (key) {
         let result = chart.yAxis.find((axis) => {
@@ -168,10 +168,10 @@ let PochartController = function (chart, config) {
         return result;
     };
     /**
-     * @private
      * 依據DataTable的欄位名稱來找出相對應的{@link http://www.highcharts.com/docs/chart-concepts/series|Highchart.Series}
      * @param {string} key - DataTable的欄位名稱
      * @return {object}
+     * @private
      */
     this.findSeries = function (key) {
         let target = chart.series.find((ser) => {
@@ -351,7 +351,7 @@ let Pochart = {};
  * @param {string} url - the url of resource
  * @param {function} callback - callback function invoked after resource loaded
  */
-Pochart.load = function (url, callback) {
+Pochart.load = function (url, callback, err_callback) {
     var res = null;
     if (url.endsWith("css")) {
         res = document.createElement('link');
@@ -362,6 +362,7 @@ Pochart.load = function (url, callback) {
         res.type = 'text/javascript';
         res.async = true;
     }
+    res.onerror = err_callback;
     if (res.readyState) {
         res.onreadystatechange = function () {
             if (res.readyState == "loaded" || res.readyState == "complete") {
@@ -397,8 +398,8 @@ Pochart.initialize = function () {
         this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css', () => {
             this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js', () => {
                 this.deferred.resolve();
-            });
-        });
+            }, (err) => {this.deferred.reject(err)});
+        }, (err) => {this.deferred.reject(err)});
     } else {
         this.deferred.resolve();
     }
@@ -425,6 +426,7 @@ Pochart.IsHcLoaded = function () {
 Pochart.attachChart = function () {
     if (!this.initialized()) {
         this.initialize();
+        this.deferred.promise.fail((err) => {console.error("unable to load Highchars", err.srcElement.src, err);});
     }
     let proxiedObject = null;
     this.deferred.promise.then(() => {
