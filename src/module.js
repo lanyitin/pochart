@@ -345,8 +345,6 @@ let PochartController = function (chart, config) {
 
 /** @namespace */
 let Pochart = {};
-Pochart.initialized = false;
-Pochart.action_queue = [];
 
 /**
  * dynamicly load external resources
@@ -394,25 +392,20 @@ Pochart.load = function (url, callback) {
  * if not, postpone all (attachChart) actions unitl Highcharts be loaded
  */
 Pochart.initialize = function () {
+    this.deferred = Q.defer();
     if (!this.IsHcLoaded()) {
         this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/css/highcharts.css', () => {
-            this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js');
+            this.load('http://myvf.kh.asegroup.com/cdn/highcharts/5.0.2/code/highcharts.js', () => {
+                this.deferred.resolve();
+            });
         });
+    } else {
+        this.deferred.resolve();
     }
+}
 
-    setInterval(() => {
-        if (this.action_queue.length === 0 || !this.IsHcLoaded()) {
-            return;
-        }
-        let action_count  = ths.action_queue.length;
-        for (let i = 0; i < action_count; i++) {
-            let action = this.action_queue.shift();
-            if (action) {
-                return action();
-            }
-        }
-    }, 10);
-    this.initialized = true;
+Pochart.initialized = function () {
+    return this["deferred"] !== null && this["deferred"] !== undefined;
 }
 
 Pochart.IsHcLoaded = function () {
@@ -430,11 +423,11 @@ Pochart.IsHcLoaded = function () {
  * @return {PochartController}
  */
 Pochart.attachChart = function () {
-    if (!this.initialized) {
+    if (!this.initialized()) {
         this.initialize();
     }
     let proxiedObject = null;
-    this.action_queue.push(() => {
+    this.deferred.promise.then(() => {
         proxiedObject = _Pochart.attachChart.apply(_Pochart, arguments);
     });
     let NullChartObj = new PochartController({}, {series:[]});
@@ -442,9 +435,10 @@ Pochart.attachChart = function () {
         return typeof NullChartObj[p] === "function";
     });
     let proxy = {};
+    proxy.isProxy = true;
     properties.forEach((p) => {
         proxy[p] = (function () {
-            this.action_queue.push(() => {
+            this.deferred.promise.then(() => {
                 return proxiedObject[p].apply(proxiedObject, arguments);
             });
         }).bind(this)
