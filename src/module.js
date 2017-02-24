@@ -357,14 +357,18 @@ let PochartController = function (chart, config) {
         });
     }
 
+    /**
+     * 設定圖表使用的顏色集合
+     * @param {array} colors
+     */
     this.setColors = function (colors) {
         this.update({
             "colors": colors
         });
     }
 
-    this.setSeriesAsXAxisCategories = function(key) {
-
+    this.addSeries = function (series) {
+        chart.addSeries(series);
     }
 }
 
@@ -465,7 +469,7 @@ Pochart.attachChart = function () {
     proxy.isProxy = true;
     properties.forEach((p) => {
         proxy[p] = (function () {
-            this.promise.then(() => {
+            return this.promise.then(() => {
                 return proxiedObject[p].apply(proxiedObject, arguments);
             });
         }).bind(this)

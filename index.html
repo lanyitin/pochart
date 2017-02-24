@@ -6,8 +6,6 @@
     </head>
     <body>
         <div id="chart"></div>
-        <div id="chart2"></div>
-        <div id="chart-demo"></div>
         <script src="dist/pochart.all.js"></script>
         <script type="text/javascript">
         var randomIntFromInterval = function (min,max)
@@ -48,6 +46,13 @@
             data.ratio = (data.lot_count / data.expected_count * 100).toFixed(0) / 1
         }
 
+        let ratio_group = oee_data.reduce((acc, ele) => {
+            let key = (ele.ratio/10).toFixed().toString();
+            acc[key] = acc[key] | 0;
+            acc[key]++;
+            return acc;
+        }, {});
+
         window.chart = Pochart.attachChart("chart", oee_data, {
             ratio: null,
             expected_count: {type: "column"},
@@ -61,7 +66,21 @@
         chart.setLegendTitle("lot_count", "實際產出");
         chart.setLegendTitle("expected_count", "預期產出");
         chart.setYAxisMinValue("ratio", 0);
-        chart.addEvent("lot_count", "click", console.log);
+        chart.addSeries({
+            name: "oee比例天數",
+            type: "pie",
+            data: Object.keys(ratio_group).map((key) => {
+                return {name: `${key}0%~${key}9%`, y:ratio_group[key]};
+            }),
+            center: [100, 0],
+            size: 100,
+            showInLegend: false,
+            dataLabels: {
+                enabled: false
+            }
+        });
+        chart.addEvent("oee比例天數", "click", console.log);
+        chart.addEvent("oee比例天數", "mouseOver", console.log);
         </script>
     </body>
 </html>
